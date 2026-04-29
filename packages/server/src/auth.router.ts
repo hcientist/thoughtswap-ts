@@ -43,11 +43,19 @@ if (!CANVAS_CLIENT_ID || !CANVAS_CLIENT_SECRET || !CANVAS_BASE_URL) {
 
 const getRedirectUri = (req: Request): string => {
     if (CANVAS_REDIRECT_URI) {
+        console.log('[Canvas OAuth] Using CANVAS_REDIRECT_URI env var:', CANVAS_REDIRECT_URI);
         return CANVAS_REDIRECT_URI;
     }
     const protocol = req.get('x-forwarded-proto') || req.protocol;
     const host = req.get('x-forwarded-host') || req.get('host') || '';
-    return `${protocol}://${host}/accounts/canvas/login/callback`;
+    const uri = `${protocol}://${host}/accounts/canvas/login/callback`;
+    console.log('[Canvas OAuth] Computed redirect_uri:', uri, '| headers:', {
+        'x-forwarded-proto': req.get('x-forwarded-proto'),
+        'x-forwarded-host': req.get('x-forwarded-host'),
+        host: req.get('host'),
+        protocol: req.protocol,
+    });
+    return uri;
 };
 
 // Type definitions
@@ -141,6 +149,7 @@ router.get('/', (req: Request, res: Response) => {
         `state=${state}&` +
         `scope=${encodeURIComponent(REQUIRED_SCOPES)}`;
 
+    console.log('[Canvas OAuth] Redirecting user to Canvas with redirect_uri:', redirectUri);
     console.log('Redirecting to Canvas Auth URL:', authUrl);
     res.redirect(authUrl);
 });
@@ -162,6 +171,7 @@ router.get('/callback', async (req: Request, res: Response) => {
 
     try {
         const redirectUri = getRedirectUri(req);
+        console.log('[Canvas OAuth] Exchanging code with redirect_uri:', redirectUri);
 
         // Step 1: Exchange the code for the Access Token
         const tokenResponse = await axios.post(

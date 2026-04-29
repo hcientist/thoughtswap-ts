@@ -118,7 +118,6 @@ jobs:
             CANVAS_BASE_URL=${{ secrets.CANVAS_BASE_URL }}
             CANVAS_CLIENT_ID=${{ secrets.CANVAS_CLIENT_ID }}
             CANVAS_CLIENT_SECRET=${{ secrets.CANVAS_CLIENT_SECRET }}
-            CANVAS_REDIRECT_URI=${{ secrets.CANVAS_REDIRECT_URI }}
             DATABASE_URL=${{ secrets.DATABASE_URL }}
 
   # ── 3. Deploy the client (Nginx static + reverse-proxy) to Cloud Run ───────
