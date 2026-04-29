@@ -37,9 +37,18 @@ const {
     CANVAS_REDIRECT_URI,
 } = process.env;
 
-if (!CANVAS_CLIENT_ID || !CANVAS_CLIENT_SECRET || !CANVAS_BASE_URL || !CANVAS_REDIRECT_URI) {
-    throw new Error('Missing one or more Canvas OAuth environment variables.');
+if (!CANVAS_CLIENT_ID || !CANVAS_CLIENT_SECRET || !CANVAS_BASE_URL) {
+    throw new Error('Missing one or more required Canvas OAuth environment variables (CANVAS_CLIENT_ID, CANVAS_CLIENT_SECRET, CANVAS_BASE_URL).');
 }
+
+const getRedirectUri = (req: Request): string => {
+    if (CANVAS_REDIRECT_URI) {
+        return CANVAS_REDIRECT_URI;
+    }
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const host = req.get('x-forwarded-host') || req.get('host') || '';
+    return `${protocol}://${host}/accounts/canvas/login/callback`;
+};
 
 // Type definitions
 interface CanvasEnrollment {
@@ -122,12 +131,13 @@ const fetchUserEnrollments = async (
 
 router.get('/', (req: Request, res: Response) => {
     const state = 'random_state_string';
+    const redirectUri = getRedirectUri(req);
 
     const authUrl =
         `${CANVAS_BASE_URL}/login/oauth2/auth?` +
         `client_id=${CANVAS_CLIENT_ID}&` +
         `response_type=code&` +
-        `redirect_uri=${encodeURIComponent(CANVAS_REDIRECT_URI!)}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `state=${state}&` +
         `scope=${encodeURIComponent(REQUIRED_SCOPES)}`;
 
@@ -151,6 +161,8 @@ router.get('/callback', async (req: Request, res: Response) => {
     }
 
     try {
+        const redirectUri = getRedirectUri(req);
+
         // Step 1: Exchange the code for the Access Token
         const tokenResponse = await axios.post(
             `${CANVAS_BASE_URL}/login/oauth2/token`,
@@ -158,7 +170,7 @@ router.get('/callback', async (req: Request, res: Response) => {
                 grant_type: 'authorization_code',
                 client_id: CANVAS_CLIENT_ID,
                 client_secret: CANVAS_CLIENT_SECRET,
-                redirect_uri: CANVAS_REDIRECT_URI,
+                redirect_uri: redirectUri,
                 code: code,
             },
             {
