@@ -165,6 +165,20 @@ io.on('connection', (socket: Socket) => {
     const userPromise = (async () => {
         if (!email) return null;
         try {
+            // Handle demo users dynamically
+            if (email.endsWith('@demo.com')) {
+                const isTeacher = email.includes('teacher');
+                return await prisma.user.upsert({
+                    where: { email },
+                    update: {},
+                    create: {
+                        email,
+                        name: name || (isTeacher ? 'Guest Teacher' : 'Guest Student'),
+                        canvasId: `demo-${Math.random().toString(36).substr(2, 9)}`,
+                        accessToken: 'demo-token',
+                    }
+                });
+            }
             return await prisma.user.findUnique({ where: { email } });
         } catch (e) {
             console.error('User load error', e);

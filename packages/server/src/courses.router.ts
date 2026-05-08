@@ -60,16 +60,63 @@ const getCanvasCourseData = async (canvasId: string, accessToken: string): Promi
     }
 };
 
-// GET /courses - Get user's courses
-router.get('/', async (req: Request, res: Response) => {
-    try {
-        const email = (req.headers['x-user-email'] as string) || (req.headers.email as string);
+    // GET /courses - Get user's courses
+    router.get('/', async (req: Request, res: Response) => {
+        try {
+            const email = (req.headers['x-user-email'] as string) || (req.headers.email as string);
 
-        if (!email) {
-            return res.status(401).json({ error: 'Missing user email' });
-        }
+            if (!email) {
+                return res.status(401).json({ error: 'Missing user email' });
+            }
 
-        const user = await prisma.user.findUnique({
+            // Support demo users
+            if (email.endsWith('@demo.com')) {
+                const isTeacher = email.includes('teacher');
+                const demoUser = await prisma.user.upsert({
+                    where: { email },
+                    update: {},
+                    create: {
+                        email,
+                        name: isTeacher ? 'Guest Teacher' : 'Guest Student',
+                        canvasId: `demo-${Math.random().toString(36).substr(2, 9)}`,
+                        accessToken: 'demo-token',
+                    }
+                });
+
+                if (isTeacher) {
+                    await prisma.course.upsert({
+                        where: { canvasId: 'demo-course-01' },
+                        update: { teacherId: demoUser.id }, // Make sure they own it
+                        create: {
+                            canvasId: 'demo-course-01',
+                            title: 'Demonstration Course',
+                            semester: 'Demo Semester',
+                            joinCode: 'DEMO01',
+                            teacherId: demoUser.id,
+                        }
+                    });
+                } else {
+                    const demoCourse = await prisma.course.upsert({
+                        where: { canvasId: 'demo-course-01' },
+                        update: {
+                            students: {
+                                connect: { id: demoUser.id }
+                            }
+                        },
+                        create: {
+                            canvasId: 'demo-course-01',
+                            title: 'Demonstration Course',
+                            semester: 'Demo Semester',
+                            joinCode: 'DEMO01',
+                            students: {
+                                connect: { id: demoUser.id }
+                            }
+                        }
+                    });
+                }
+            }
+
+            const user = await prisma.user.findUnique({
             where: { email },
             include: {
                 enrollments: {

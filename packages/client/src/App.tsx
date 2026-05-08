@@ -14,7 +14,7 @@ import TeacherView from './components/TeacherView';
 import Dashboard from './components/Dashboard';
 import Modal from './components/Modal';
 import OnboardingTour from './components/OnboardingTour';
-import { LogOut, Users, Zap } from 'lucide-react';
+import { LogOut, Users, Zap, GraduationCap, Play } from 'lucide-react';
 
 type UserRole = 'STUDENT' | 'TEACHER' | null;
 
@@ -254,6 +254,20 @@ function App() {
         setShowTour(false);
     };
 
+    const handleDemoLogin = (role: 'STUDENT' | 'TEACHER') => {
+        const randomId = Math.floor(Math.random() * 10000);
+        updateAuth({
+            isLoggedIn: true,
+            name:
+                role === 'TEACHER'
+                    ? `Guest Teacher ${randomId}`
+                    : `Guest Student ${randomId}`,
+            email: `guest_${role?.toLowerCase()}_${randomId}@demo.com`,
+            role: role,
+            expiry: Date.now() + SESSION_DURATION,
+        });
+    };
+
     const handleLogout = () => {
         // If teacher, attempt to end active session
         if (courseSelection.isTeacher) {
@@ -328,6 +342,38 @@ function App() {
                             <Users className="h-6 w-6" />
                             <span>Login with Canvas</span>
                         </a>
+
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-200"></div>
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-2 bg-white text-gray-500">
+                                    Or try Demonstration Mode
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                onClick={() => handleDemoLogin('TEACHER')}
+                                className="px-6 py-4 bg-white border-2 border-indigo-100 text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition flex flex-col items-center justify-center space-y-2 group"
+                            >
+                                <div className="p-2 bg-indigo-100 rounded-full group-hover:bg-indigo-200 transition">
+                                    <GraduationCap className="w-6 h-6" />
+                                </div>
+                                <span>Demo Teacher</span>
+                            </button>
+                            <button
+                                onClick={() => handleDemoLogin('STUDENT')}
+                                className="px-6 py-4 bg-white border-2 border-green-100 text-green-600 font-bold rounded-xl hover:bg-green-50 transition flex flex-col items-center justify-center space-y-2 group"
+                            >
+                                <div className="p-2 bg-green-100 rounded-full group-hover:bg-green-200 transition">
+                                    <Play className="w-6 h-6" />
+                                </div>
+                                <span>Demo Student</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
