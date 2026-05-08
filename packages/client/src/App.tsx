@@ -330,7 +330,7 @@ function App() {
                             ThoughtSwap
                         </h1>
                         <p className="text-xl text-gray-500">
-                            Real-time anonymous peer review for classrooms.
+                            Real-time anonymous peer review for groups.
                         </p>
                     </div>
 
